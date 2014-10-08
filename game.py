@@ -13,8 +13,18 @@ GAME_WIDTH = 5
 GAME_HEIGHT = 5
 
 #### Put class definitions here ####
+class Gem(GameElement):
+    IMAGE = "BlueGem"
+    SOLID = False
+    def interact(self, player):
+        player.inventory.append(self)
+        GAME_BOARD.draw_msg("You just acquired a gem! You have %d items!" % len(player.inventory))
+
+
+
 class Rock(GameElement):
     IMAGE = "Rock"
+    SOLID = True
 
 class Character(GameElement):
     IMAGE = "Princess"
@@ -49,9 +59,21 @@ class Character(GameElement):
             if next_location:
                 next_x = next_location[0]
                 next_y = next_location[1]
-                self.board.del_el(self.x, self.y)
-                self.board.set_el(next_x, next_y, self)
-    
+
+                existing_el = self.board.get_el(next_x, next_y)
+
+                if existing_el:
+                    existing_el.interact(self)
+
+                if existing_el and existing_el.SOLID:
+                    self.board.draw_msg("There's something in my way!")
+                elif existing_el is None or not existing_el.SOLID:
+                    self.board.del_el(self.x, self.y)
+                    self.board.set_el(next_x, next_y, self)
+
+    def __init__(self):
+        GameElement.__init__(self)
+        self.inventory = []
 
 
 
@@ -60,7 +82,7 @@ class Character(GameElement):
 
 def initialize():
     """Put game initialization code here"""
-    GAME_BOARD.draw_msg("This game is awesome.")
+
 
     rock_positions = [
         (2,1),
@@ -77,6 +99,8 @@ def initialize():
         GAME_BOARD.set_el(pos[0], pos[1], rock)
         rocks.append(rock)
 
+    rocks[-1].SOLID = False
+
     for rock in rocks:
         print rock
 
@@ -84,3 +108,17 @@ def initialize():
     GAME_BOARD.register(player)
     GAME_BOARD.set_el(2,2,player)
     print player
+
+    GAME_BOARD.draw_msg("This game is awesome.")
+
+    gem = Gem()
+    GAME_BOARD.register(gem)
+    GAME_BOARD.set_el(3,1, gem)
+
+    gem2 = Gem()
+    gem2.IMAGE = "OrangeGem"
+    GAME_BOARD.register(gem2)
+    GAME_BOARD.set_el(1,3, gem)
+
+
+
