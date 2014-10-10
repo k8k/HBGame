@@ -5,8 +5,8 @@ from pyglet.window import key
 from core import GameElement
 from board import Board
 
-SCREEN_X = 800
-SCREEN_Y = 700
+SCREEN_X = 1000
+SCREEN_Y = 1000
 
 game_window = pyglet.window.Window(SCREEN_X, SCREEN_Y)
 board = None
@@ -45,7 +45,8 @@ def setup_images():
             "Cat": "Character Cat Girl.png",
             "Horns": "Character Horn Girl.png",
             "Girl": "Character Pink Girl.png",
-            "Princess": "Character Princess Girl.png"
+            "Princess": "Character Princess Girl.png",
+            "Bug": "Enemy Bug.png",
             }
 
     for k,v in filenames.items():
@@ -117,7 +118,7 @@ def run():
     draw_list.append(board)
 
     # Set up the update clock
-    pyglet.clock.schedule_interval(update, 1/10.)
+    pyglet.clock.schedule_interval(update, 1/2.)
     game.initialize()
     pyglet.app.run()
 

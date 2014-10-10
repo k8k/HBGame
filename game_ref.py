@@ -82,7 +82,7 @@ class Character(GameElement):
                     self.board.del_el(self.x, self.y)
                     self.board.set_el(next_x, next_y, self)
 
-pass
+
 ####   End class definitions    ####
 
 def initialize():

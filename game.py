@@ -3,14 +3,15 @@ import pyglet
 from pyglet.window import key
 from core import GameElement
 import sys
+import random
 
 #### DO NOT TOUCH ####
 GAME_BOARD = None
 DEBUG = False
 ######################
 
-GAME_WIDTH = 7
-GAME_HEIGHT = 7
+GAME_WIDTH = 8
+GAME_HEIGHT = 8
 
 #### Put class definitions here ####
 class Gem(GameElement):
@@ -24,14 +25,100 @@ class Gem(GameElement):
             GAME_BOARD.draw_msg("You are now a CAT! Meow")
 
 class Rock(GameElement):
+   
     IMAGE = "Rock"
     SOLID = True
+
+    def interact(self, player):
+
+        if player.IMAGE == "Bug":
+            self.SOLID = False
+            GAME_BOARD.base_board[self.y][self.x] = "Block"
+            GAME_BOARD.draw_game_map()
+
+            player.rock_inventory.append(self)
+            if len(player.rock_inventory) > 11:
+                # Create a key
+                akey = Key()
+                GAME_BOARD.register(akey)
+                GAME_BOARD.set_el(4,4,akey)
+
+                # Create a door
+                door = Door()
+                # Set the key that opens this door
+                door.key = akey
+
+                GAME_BOARD.register(door)
+                GAME_BOARD.set_el(5,0, door)
+                player.change_image("Princess")
+                # bad_guy = BadGuy()
+                # GAME_BOARD.register(bad_guy)
+                # GAME_BOARD.set_el(1,5, bad_guy)
+                GAME_BOARD.draw_msg("Now you're a princess again! Take the key and open the door")
+
+
+        else:
+            self.SOLID = True
+
+
 
 class Door(GameElement):
     IMAGE = "DoorClosed"
     SOLID = True
+    key = None
+
     def interact(self, player):
-        self.change_image("DoorOpen")
+
+        if self.key in player.inventory:
+            self.change_image("DoorOpen")
+            GAME_BOARD.draw_msg("Congratulations! You cut down the forest. You progress to level 2.")
+            GAME_BOARD.del_el(player.x, player.y)
+            
+            GAME_BOARD.draw_board()
+            GAME_BOARD.set_el(0,7,player)
+
+            for i in range(8):
+                GAME_BOARD.base_board[4][i] = "WoodBlock"
+                GAME_BOARD.base_board[5][i] = "WoodBlock"
+                GAME_BOARD.base_board[6][i] = "WoodBlock"
+                GAME_BOARD.base_board[7][i] = "WoodBlock"            
+
+            GAME_BOARD.draw_game_map()
+            
+
+
+
+class Boy(GameElement):
+    IMAGE = "Boy"
+    SOLID = True
+    def interact(self, player):
+        if player.IMAGE == "Princess":
+            GAME_BOARD.draw_msg("Hey. If you eat all the gems you can turn into a cat! I hear they are good at cutting down trees.")
+        elif player.IMAGE == "Cat":
+            GAME_BOARD.draw_msg("Cut down all the trees and see what happens!")
+        elif player.IMAGE == "Bug":
+            GAME_BOARD.draw_msg("Help us get rid of all the ugly grass!")
+
+
+class Key(GameElement):
+    IMAGE = "Key"  
+
+    def interact(self,player):
+        player.inventory.append(self)
+
+
+
+
+class Heart(GameElement):
+    IMAGE = "Heart"
+
+    def interact(self, player):
+        player.heart_inventory.append(self)
+        if len(player.heart_inventory) >= 1:
+            player.change_image("Bug")
+            GAME_BOARD.draw_msg("You are now a BUG!")
+
+
 
 
 class Tree(GameElement):
@@ -39,18 +126,48 @@ class Tree(GameElement):
     # SOLID = True 
 
     def interact(self, player):
-        if player.IMAGE != "Cat":
-            self.SOLID = True
-        else:
+
+        if player.IMAGE == "Cat":
             self.SOLID = False
-    # SOLID = False
+            GAME_BOARD.base_board[self.y][self.x] = "Block"
+            GAME_BOARD.draw_game_map()
+
+            player.tree_inventory.append(self)
+            if len(player.tree_inventory) > 7:
+                heart = Heart()
+                GAME_BOARD.register(heart)
+                GAME_BOARD.set_el(5,6,heart)
+                
+        else:
+            self.SOLID = True
+
+
+class BadGuy(GameElement):
+    IMAGE = "Horns"
+    direction = 1
+    SOLID = True
+
+    def update(self, dt):
+
+        next_x = self.x + self.direction
+
+        if next_x < 0 or next_x >= self.board.width:
+            self.direction *= -1
+            next_x = self.x
+
+        self.board.del_el(self.x, self.y)
+        self.board.set_el(next_x, self.y, self)
+
+    def interact(self, player):
+        pass
+
+
+
 
 class Character(GameElement):
     IMAGE = "Princess"
 
-    # def transform(self,inventory):
-    #     if len(self.inventory) > 2:
-    #         self.change_image("Cat")
+   
 
     def next_pos(self, direction):
         if direction == "up":
@@ -65,6 +182,7 @@ class Character(GameElement):
 
     def keyboard_handler(self, symbol, modifier):
         direction = None
+        
         if symbol == key.UP:
             direction = "up"
         elif symbol == key.DOWN:
@@ -74,34 +192,41 @@ class Character(GameElement):
         elif symbol == key.RIGHT:
             direction = "right"
 
-        self.board.draw_msg("[%s] moves %s" % (self.IMAGE, direction))
-
         if direction:
-            next_location = self.next_pos(direction)
+            if 0 <= self.next_pos(direction)[0] <= GAME_WIDTH-1 and 0 <= self.next_pos(direction)[1] <= GAME_HEIGHT-1:
 
-            if next_location:
+                next_location = self.next_pos(direction)
+
+                if next_location:
+            
+                    next_x = next_location[0]
+                    next_y = next_location[1]
+
+                    existing_el = self.board.get_el(next_x, next_y)
+
+                    if existing_el:
+                        existing_el.interact(self)
+
+                    if existing_el is None or not existing_el.SOLID:
+                        self.board.del_el(self.x, self.y)
+                        self.board.set_el(next_x, next_y, self)
+
+            else:
+                next_location = (self.x, self.y)
+                #self.board.draw_msg("You've reached the edge of the board! Go a different way!")
+
+            if self.IMAGE == "Bug":
+                GAME_BOARD.base_board[self.y][self.x] = "Block"
+                GAME_BOARD.draw_game_map()
         
-            # else:
-                next_x = next_location[0]
-                next_y = next_location[1]
-
-                ###if next_x > 6 or next_x < 0:  ### BEGINNING OF BOUNDS RESTRICTION
-
-                existing_el = self.board.get_el(next_x, next_y)
-
-                if existing_el:
-                    existing_el.interact(self)
-
-
-                if existing_el and existing_el.SOLID:
-                    self.board.draw_msg("There's something in my way!")
-                elif existing_el is None or not existing_el.SOLID:
-                    self.board.del_el(self.x, self.y)
-                    self.board.set_el(next_x, next_y, self)
 
     def __init__(self):
         GameElement.__init__(self)
         self.inventory = []
+        self.tree_inventory = []
+        self.heart_inventory =[]
+        self.rock_inventory =[]
+        self.key_inventory = []
 
 
 
@@ -113,10 +238,21 @@ def initialize():
 
 
     rock_positions = [
-        (2,1),
+        (1,1),
+        (1,6),
+        (2,2),
+        (5,6),
+        (6,2),
         (1,2),
-        (3,2),
+        (1,3),
+        (6,6),
         (2,3),
+        (1,6),
+        (2,6),
+        (3,6),
+        (2,5),
+        (3,5),
+
     ]
 
     rocks = []
@@ -127,39 +263,76 @@ def initialize():
         GAME_BOARD.set_el(pos[0], pos[1], rock)
         rocks.append(rock)
 
-    rocks[-1].SOLID = False
+
+    # block_positions = [
+    #     (0,5),
+    #     (4,4),
+    # ]
+    
+    # blocks = []
+
+    # for pos in block_positions:
+    #     block = Ground()
+    #     GAME_BOARD.register(block)
+    #     GAME_BOARD.set_el(pos[0], pos[1], block)
+    #     blocks.append(block)
+
+
+    boy = Boy()
+    GAME_BOARD.register(boy)
+    GAME_BOARD.set_el(3,4,boy)
+
+    # wall = Wall()
+    # GAME_BOARD.register(wall)
+    # GAME_BOARD.set_el(6,5,wall)
+
+    # stoneblock = StoneBlock()
+    # GAME_BOARD.register(stoneblock)
+    # GAME_BOARD.set_el(0,1,stoneblock)
+
+    # block = Block()
+    # GAME_BOARD.register(block)
+    # GAME_BOARD.set_el(0,5, block)
+
+    heart = Heart()
+    GAME_BOARD.register(heart)
 
 
     player = Character()
     GAME_BOARD.register(player)
-    GAME_BOARD.set_el(2,2,player)
+    GAME_BOARD.set_el(3,3,player)
 
     GAME_BOARD.draw_msg("Can you chop down the trees? Welcome to our deforestation game.")
 
     
     gem_positions = [
-        (3,1),
-        (1,3),
-        (4,4),
-        (3,3),
-        (0,4),
+        (0,3),
+        (1,5),
+        (2,1),
+        (4,0),
+        (5,5),
         ]
 
     gems = []
 
     for pos in gem_positions:
         gem = Gem()
+        gemcolors = ["BlueGem", "OrangeGem", "GreenGem"]
+        gem.IMAGE = random.choice(gemcolors)
         GAME_BOARD.register(gem)
         GAME_BOARD.set_el(pos[0], pos[1], gem)
         gems.append(gem)
 
 
     tree_positions = [
-        (4,1),
-        (2,6),
-        (6,6),
-        (5,6),
         (0,0),
+        (1,4),
+        (4,6),
+        (5,3),
+        (6,1),
+        (3,1),
+        (4,1),
+        (5,1),
         ]
 
     trees = []
@@ -170,4 +343,8 @@ def initialize():
         GAME_BOARD.set_el(pos[0], pos[1], tree)
         trees.append(tree)
 
+ 
+    # bad_guy = BadGuy()
+    # GAME_BOARD.register(bad_guy)
+    # GAME_BOARD.set_el(1,5, bad_guy)
 
