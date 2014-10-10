@@ -77,11 +77,47 @@ class Door(GameElement):
             GAME_BOARD.draw_board()
             GAME_BOARD.set_el(0,7,player)
 
+
             for i in range(8):
+                GAME_BOARD.base_board[0][i] = "WaterBlock"
+                GAME_BOARD.base_board[1][i] = "WaterBlock"
+                GAME_BOARD.base_board[2][i] = "WaterBlock"
+                GAME_BOARD.base_board[3][i] = "WoodBlock"
                 GAME_BOARD.base_board[4][i] = "WoodBlock"
                 GAME_BOARD.base_board[5][i] = "WoodBlock"
                 GAME_BOARD.base_board[6][i] = "WoodBlock"
-                GAME_BOARD.base_board[7][i] = "WoodBlock"            
+                GAME_BOARD.base_board[7][i] = "WoodBlock"
+
+            wall_positions = [
+                (0,3),
+                (1,3),
+                (3,3),
+                (4,3),
+                (6,3),
+                (7,3),
+                ]
+
+            walls = []
+
+            for pos in wall_positions:
+                wall = Walls()
+                GAME_BOARD.register(wall)
+                GAME_BOARD.set_el(pos[0], pos[1], wall)
+                walls.append(wall)
+
+            window1 = Window()
+            GAME_BOARD.register(window1)
+            GAME_BOARD.set_el(2,3,window1)
+
+            window2 = Window()
+            GAME_BOARD.register(window2)
+            GAME_BOARD.set_el(5,3, window2)
+
+            shrub = HousePlant()
+            GAME_BOARD.register(shrub)
+            GAME_BOARD.set_el(7,6,shrub)
+
+            
 
             GAME_BOARD.draw_game_map()
             
@@ -119,11 +155,21 @@ class Heart(GameElement):
             GAME_BOARD.draw_msg("You are now a BUG!")
 
 
+class HousePlant(GameElement):
+    IMAGE = "ShortTree"
+    SOLID = True
 
+class Window(GameElement):
+    IMAGE = "Window"
+    SOLID = True
+
+class Walls(GameElement):
+    IMAGE = "StoneBlock"
+    SOLID = True
 
 class Tree(GameElement):
     IMAGE = "TallTree"
-    # SOLID = True 
+
 
     def interact(self, player):
 
@@ -264,35 +310,10 @@ def initialize():
         rocks.append(rock)
 
 
-    # block_positions = [
-    #     (0,5),
-    #     (4,4),
-    # ]
-    
-    # blocks = []
-
-    # for pos in block_positions:
-    #     block = Ground()
-    #     GAME_BOARD.register(block)
-    #     GAME_BOARD.set_el(pos[0], pos[1], block)
-    #     blocks.append(block)
-
 
     boy = Boy()
     GAME_BOARD.register(boy)
     GAME_BOARD.set_el(3,4,boy)
-
-    # wall = Wall()
-    # GAME_BOARD.register(wall)
-    # GAME_BOARD.set_el(6,5,wall)
-
-    # stoneblock = StoneBlock()
-    # GAME_BOARD.register(stoneblock)
-    # GAME_BOARD.set_el(0,1,stoneblock)
-
-    # block = Block()
-    # GAME_BOARD.register(block)
-    # GAME_BOARD.set_el(0,5, block)
 
     heart = Heart()
     GAME_BOARD.register(heart)
